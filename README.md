@@ -17,9 +17,6 @@ tree-shakeable **en/sk i18n** (English by default) and optional fuzzy **search**
   accent-tolerant, with custom aliases.
 - **Opt-in IANA timezones** (`/timezones`).
 
-> Membership: 234 countries/territories, matching the canonical list used by the
-> `@marianmeres/stuic` phone/country inputs. See [Data & licensing](#data--licensing).
-
 ## Install
 
 ```sh
