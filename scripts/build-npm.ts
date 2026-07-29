@@ -10,7 +10,15 @@ await npmBuild({
 	// normal dependency so it installs for tsc and resolves at runtime. Consumers
 	// that never import `./search` tree-shake it out.
 	dependencies: versionizeDeps(["@marianmeres/searchable"], denoJson),
-	entryPoints: ["mod", "search", "timezones", "locales/sk"],
+	entryPoints: [
+		"mod",
+		"search",
+		"subdivisions",
+		"subdivisions/us",
+		"subdivisions/ca",
+		"timezones",
+		"locales/sk",
+	],
 	// Required so bundlers can tree-shake unused entry points / locale chunks.
 	packageJsonOverrides: { sideEffects: false },
 });

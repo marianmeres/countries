@@ -58,3 +58,24 @@ export interface Country {
  * (`names[iso] ?? country.name`) — there is no translation engine.
  */
 export type LocaleNames = Record<string, string>;
+
+/**
+ * A single country subdivision (ISO 3166-2) — e.g. a US state or a Canadian
+ * province. Lives in the opt-in `./subdivisions` entry points.
+ */
+export interface Subdivision {
+	/**
+	 * ISO 3166-2 code suffix — the part after the country code and hyphen — e.g.
+	 * `"MI"` (full ISO 3166-2 code: `"US-MI"`). Unique within a country. For US
+	 * and CA these match the USPS / Canada Post abbreviations.
+	 */
+	code: string;
+	/** Canonical English name, e.g. `"Michigan"`. */
+	name: string;
+	/**
+	 * ISO 3166-2 subdivision category, lower-case — e.g. `"state"`,
+	 * `"district"`, `"outlying area"`, `"province"`, `"territory"`. Kept an open
+	 * string: categories vary per country.
+	 */
+	category: string;
+}

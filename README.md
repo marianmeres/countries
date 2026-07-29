@@ -16,6 +16,8 @@ tree-shakeable **en/sk i18n** (English by default) and optional fuzzy **search**
   [`@marianmeres/searchable`](https://jsr.io/@marianmeres/searchable) — typo- and
   accent-tolerant, with custom aliases.
 - **Opt-in IANA timezones** (`/timezones`).
+- **Opt-in ISO 3166-2 subdivisions** (`/subdivisions`) — US states, Canadian
+  provinces/territories — as per-country, tree-shakeable data modules.
 
 ## Install
 
@@ -197,6 +199,43 @@ timezonesOf("SK"); // ["Europe/Prague"]
 Opt-in (kept out of the core). Note: a point-in-time snapshot of the IANA tz
 database — treat it as a convenience, not an authority.
 
+## Subdivisions — `@marianmeres/countries/subdivisions`
+
+ISO 3166-2 subdivision lists (states, provinces, ...) for address/checkout
+forms, opt-in and per-country — you only bundle the countries you import.
+Bundled: **US** (50 states + DC + 6 outlying areas) and **CA** (10 provinces +
+3 territories).
+
+```ts
+import US from "@marianmeres/countries/subdivisions/us"; // static, tree-shakeable
+
+US.find((s) => s.code === "MI");
+// { code: "MI", name: "Michigan", category: "state" }
+```
+
+`code` is the ISO 3166-2 suffix (= the USPS / Canada Post abbreviation); the
+full ISO code is derivable as `US-MI`. Want states only? Filter by `category`
+(US: `"state" | "district" | "outlying area"`, CA: `"province" | "territory"`).
+
+Or load lazily — same pattern as `loadLocale`, code-split per country:
+
+```ts
+import { loadSubdivisions } from "@marianmeres/countries/subdivisions";
+
+await loadSubdivisions("US"); // Subdivision[] (57 entries)
+await loadSubdivisions("SK"); // [] — no bundled list (the normal case)
+```
+
+Bring your own lists for other countries with `registerSubdivisions(iso, list)`.
+Bundled coverage is deliberately demand-driven — not a full-world ISO 3166-2
+dump, since most countries' subdivisions have no practical use in forms. Ask
+(or PR) if you need another country bundled.
+
+Helpers: `loadSubdivisions(iso)`, `registerSubdivisions(iso, list)`,
+`hasSubdivisions(iso)`, `getRegisteredSubdivisions(iso)`,
+`BUILTIN_SUBDIVISIONS`. Note: a point-in-time snapshot of ISO 3166-2 — treat it
+as a convenience, not an authority.
+
 ## Data & licensing
 
 The list of 234 countries (authoritative for `iso` / `name` / `dialCode` /
@@ -221,6 +260,9 @@ deno task gen   # rewrites src/_data.ts, src/_timezones.ts, src/locales/*.ts
 
 Output is deterministic (re-running produces byte-identical files), so the
 generated files are committed.
+
+Subdivision lists (`src/subdivisions/*.ts`) are hand-maintained from the
+ISO 3166-2 standard directly and are not part of the generator.
 
 ## License
 

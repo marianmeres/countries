@@ -2,9 +2,10 @@
 
 Complete API documentation for `@marianmeres/countries`.
 
-The package exposes one zero-dependency core entry point plus three opt-in
-subpaths. Import only what you need — `./search` is the only entry that pulls in
-a dependency, and locales are code-split.
+The package exposes one zero-dependency core entry point plus opt-in subpaths.
+Import only what you need — `./search` is the only entry that pulls in a
+dependency, and locale / subdivision data modules are per-country and
+code-split.
 
 ## Table of Contents
 
@@ -15,6 +16,8 @@ a dependency, and locales are code-split.
   - [i18n](#i18n)
 - [Search (`@marianmeres/countries/search`)](#search)
 - [Timezones (`@marianmeres/countries/timezones`)](#timezones)
+- [Subdivisions (`@marianmeres/countries/subdivisions`)](#subdivisions)
+- [Subdivision modules (`@marianmeres/countries/subdivisions/*`)](#subdivision-modules)
 - [Locale modules (`@marianmeres/countries/locales/*`)](#locale-modules)
 - [Types](#types)
 - [Constants](#constants)
@@ -408,6 +411,114 @@ timezonesOf("SK"); // ["Europe/Prague"]
 
 ---
 
+## Subdivisions
+
+Imported from `@marianmeres/countries/subdivisions`. Opt-in. ISO 3166-2
+subdivision lists (states, provinces, territories, ...) keyed by ISO 3166-1
+alpha-2 country code. Bundled countries:
+[BUILTIN_SUBDIVISIONS](#builtin_subdivisions) (US, CA) — register your own for
+anything else. A point-in-time snapshot of ISO 3166-2 — treat it as a
+convenience, not an authority.
+
+#### `loadSubdivisions(iso)`
+
+Load a country's subdivision list, resolving lazily.
+
+**Parameters:**
+
+- `iso` (string) — ISO 3166-1 alpha-2 country code, e.g. `"US"`.
+  Case-insensitive.
+
+**Returns:** `Promise<Subdivision[]>`
+
+- An already-registered list is returned from the registry.
+- A bundled country (see [BUILTIN_SUBDIVISIONS](#builtin_subdivisions)) is
+  dynamically imported, cached, and registered on first use.
+- Otherwise resolves to `[]`. Unlike `loadLocale` it never rejects — having no
+  subdivision list is the normal case for most countries.
+
+```typescript
+import { loadSubdivisions } from "@marianmeres/countries/subdivisions";
+
+const us = await loadSubdivisions("US");
+// [{ code: "AL", name: "Alabama", category: "state" }, ...]  (57 entries)
+await loadSubdivisions("SK"); // [] — no bundled list
+```
+
+---
+
+#### `registerSubdivisions(iso, subdivisions)`
+
+Register (or replace) a country's subdivision list. Use for countries this
+package does not bundle, to synchronously install a statically imported list,
+or to override a bundled one.
+
+**Parameters:**
+
+- `iso` (string) — alpha-2 country code (stored upper-cased).
+- `subdivisions` ([Subdivision](#subdivision) `[]`)
+
+**Returns:** `void`
+
+```typescript
+registerSubdivisions("DE", [
+	{ code: "BW", name: "Baden-Württemberg", category: "state" },
+	{ code: "BY", name: "Bavaria", category: "state" },
+	// ...
+]);
+```
+
+---
+
+#### `hasSubdivisions(iso)`
+
+**Parameters:**
+
+- `iso` (string)
+
+**Returns:** `boolean` — whether a list is available for the country: bundled
+(even if not loaded yet) or registered.
+
+> Unlike `hasLocale`, this is not "available synchronously" — a bundled list
+> still needs `loadSubdivisions` (or a static import + register) first.
+
+---
+
+#### `getRegisteredSubdivisions(iso)`
+
+**Parameters:**
+
+- `iso` (string)
+
+**Returns:** `Subdivision[] | undefined` — the list if already
+loaded/registered, else `undefined`.
+
+---
+
+## Subdivision modules
+
+#### `@marianmeres/countries/subdivisions/us`, `.../subdivisions/ca`
+
+Default export: a [Subdivision](#subdivision) `[]`, alphabetical by English
+name. Static and tree-shakeable — import directly for a synchronous, statically
+bundled list instead of `loadSubdivisions` (and optionally
+`registerSubdivisions` it so the umbrella helpers see it).
+
+- `us` — 57 entries: 50 × `"state"`, 1 × `"district"` (DC), 6 ×
+  `"outlying area"` (AS, GU, MP, PR, UM, VI). USPS military "states" (AA/AE/AP)
+  are not ISO subdivisions and are not included.
+- `ca` — 13 entries: 10 × `"province"`, 3 × `"territory"` (NT, NU, YT).
+
+```typescript
+import US from "@marianmeres/countries/subdivisions/us";
+import { registerSubdivisions } from "@marianmeres/countries/subdivisions";
+
+registerSubdivisions("US", US);
+US.filter((s) => s.category === "state").length; // 50
+```
+
+---
+
 ## Locale modules
 
 #### `@marianmeres/countries/locales/sk`
@@ -463,6 +574,19 @@ type LocaleNames = Record<string, string>; // iso -> localized name
 The entire shape of a locale: a plain object you index directly
 (`names[iso] ?? country.name`).
 
+### `Subdivision`
+
+```typescript
+interface Subdivision { // from ./subdivisions
+	code: string; // ISO 3166-2 suffix, "MI"  (full code "US-MI"; = USPS/Canada Post abbr.)
+	name: string; // canonical English name, "Michigan"
+	category: string; // "state" | "district" | "outlying area" | "province" | "territory" | ...
+}
+```
+
+`code` is unique within its country. `category` is an open string — ISO 3166-2
+categories vary per country.
+
 ### `SearchStrategy`
 
 ```typescript
@@ -506,6 +630,11 @@ CONTINENTS.EU; // "Europe"
 ### `BUILTIN_LOCALES`
 
 `readonly string[]` — locale codes bundled with the package: `["en", "sk"]`.
+
+### `BUILTIN_SUBDIVISIONS`
+
+`readonly string[]` (from `./subdivisions`) — country codes with a bundled
+subdivision list: `["CA", "US"]`.
 
 ### `COMMON_ALIASES`
 
